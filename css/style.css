@@ -1,0 +1,8 @@
+.divleft{
+    width: 200px;
+    float: left;
+}
+.divright{
+    display: block;
+    margin-left: 202px;
+}

@@ -15,7 +15,7 @@ Sort by:
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Simplified Control Flow Graph visualizations</title>
+<title>Control Flow Only Graph (CFOG) visualizations</title>
 <style type="text/css" media="screen">
     #editor { 
 		margin-left: 0px;
@@ -38,46 +38,11 @@ Sort by:
 <body>
 
         
-<div id="jstree" class="divleft"> </div>
+<div id="jstree" class="divleft"> Loading... </div>
 
 <div id="editor" class="divright"> </div>
 
-<div id="graphviz"> graph goes here </div>
-
-<script>
-  //fs = require('fs');
-  var tree = getFileFromServer("data/esubs.tsv", function(text) {
-    if (text === null) {
-      console.log("error reading file esubs.tsv");
-    }
-    else {
-      var tree = makeJSTree(readSubs(text));
-      $(function () {
-        $('#jstree').jstree({ 
-          'core' : {
-            'data' : tree
-          }
-        });
-      });
-    }
-  });
-  console.log("Read JSTree");
-  console.log("js tree: " + Object.size(tree));
-
-</script>
-
-
-    
-<script>
-function graphviz(text) {
-    text=text.replace('\\n', '\n');
-    var svg=Viz(text, "svg", "dot");
-    var container = document.getElementById('graphviz');
-    container.innerHTML=svg;
-}
-graphviz('digraph G {\n0 -> 1;\n0 -> 2;\n1 -> 3;\n1 -> 4;\n3 -> 3;\n3 -> 3;\n4 -> 5;\n5 -> 6;\n6 -> 7;\n6 -> 8;\n8 -> 9;\n8 -> 10;\n0 [label="FunctionDef"];\n3 [label="If"];\n6 [label="If"];\n10 [label="Return"];\n7 [label="Return"];\n9 [label="Return"];\n1 [label="For"];\n2 [label="Return"];\n5 [label="For"];\n4 [label="If"];\n8 [label="If"];\n}');
-
-</script>
+<div id="graphviz"> Control Flow Only Graph (CFOG) goes here </div>
 
 <script>
     var editor = ace.edit("editor");
@@ -85,6 +50,7 @@ graphviz('digraph G {\n0 -> 1;\n0 -> 2;\n1 -> 3;\n1 -> 4;\n3 -> 3;\n3 -> 3;\n4 -
     editor.getSession().setMode("ace/mode/python");
     console.log("editor div set up");
     // TODO: read the .tsv file with a button
+    /*
     getFileFromServer("2subs.tsv", function(text) {
         if (text === null) {
             console.log("error");
@@ -98,7 +64,62 @@ graphviz('digraph G {\n0 -> 1;\n0 -> 2;\n1 -> 3;\n1 -> 4;\n3 -> 3;\n3 -> 3;\n4 -
             editor.setValue(text);
         }
     });
+    */
+</script>
+
+<script>
+  mygraphviz = function(text) {
+    text=text.replace(/\\n/g, '\n');
+    var svg=Viz(text, "svg", "dot");
+    var container = document.getElementById('graphviz');
+    container.innerHTML=svg;
+  }
+  //TODO: read esubs from a widget to upload a file
+  var tree = getFileFromServer("data/esubs.tsv", function(text) {
+    if (text === null) {
+      console.log("error reading file esubs.tsv");
+    }
+    else {
+      //TODO: convert the .tsv text files to JSON from command-line
+      // either with Python or Node.js
+      //PROB => USER => CFOG => TS => SCORE => CODE => GRAPHVIZ
+      var tree=makeJSTree(readSubs(text));
+      $(function () {
+        $('#jstree').on('select_node.jstree', function (e, data) {
+          if (data.selected.length>1) {
+            return;
+          }
+          var text=data.node.text;
+          var prefix=text.substring(0,4);
+          var rest=text.substring(6);
+          if (prefix=='CFOG') {
+            mygraphviz(data.node.data[0]);
+          }
+          if (prefix=='TIME') {
+            // [code.replace(/\\n/g, '\n', graphviz.replace(/\\n/g, '\n', passed, attempted];
+            var code=data.node.data[0];
+            var graphviz=data.node.data[1];
+            var passed=data.node.data[2];
+            var attemptedd=data.node.data[3];
+            // put code in the ACE editor
+            editor.setValue(code);
+            editor.clearSelection();
+            // set the CFOG in the CFG
+            mygraphviz(graphviz);
+          }
+          console.log('selected: '+data.node);
+        }).jstree({ 
+          'core' : {
+            'data' : tree
+          }
+        });
+      });
+      console.log("Read JSTree of size: " + Object.size(tree));
+    }
+  });
+  
 
 </script>
+
 </body>
 </html>	

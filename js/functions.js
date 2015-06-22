@@ -14,7 +14,14 @@ function getFileFromServer(url, doneCallback) {
     }
 }
 
-function graphviz(id, format, engine) {
+function mygraphviz(text) {
+    text=text.replace('\\n', '\n');
+    var svg=Viz(text, "svg", "dot");
+    var container = document.getElementById('graphviz');
+    container.innerHTML=svg;
+}
+
+function graphviz2(id, format, engine) {
     var result;
     try {
         result = Viz(src(id), format, engine);
@@ -26,4 +33,11 @@ function graphviz(id, format, engine) {
     } catch(e) {
       return inspect(e.toString());
     }
+}
+
+if (typeof String.prototype.startsWith != 'function') {
+  // see below for better implementation!
+  String.prototype.startsWith = function (str){
+    return this.indexOf(str) === 0;
+  };
 }

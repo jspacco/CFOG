@@ -28,7 +28,16 @@ Sort by:
 <script src="js/viz.js" type="text/javascript" charset="utf-8"></script>
 <script src="js/functions.js" type="text/javascript" charset="utf-8"></script>
 <script src="js/ace/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
-<script src="js/jquery/jquery.js" type="text/javascript"></script>
+<!-- <script src="js/jquery/jquery.js" type="text/javascript"></script> -->
+ <!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+
+<!-- jQuery library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<!-- Bootstrap -->
+<script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+
 <script src="js/jstree/jstree.min.js" type="text/javascript"></script>
 <script src="js/makemap.js" type="text/javascript"></script>
 
@@ -37,43 +46,38 @@ Sort by:
 </head>
 <body>
 
-        
+
+<div id="editor-cfog" class="divright">
+  <div id="score">
+
+  </div>
+  <!--
+  <div class="container">
+    <h2 id="progress-label">Correct</h2>
+    <div class="progress">
+      <div id="progress-bar" class="progress-bar" role="progressbar" aria-valuenow="70" aria-valuemin="0" aria-valuemax="100" style"width:50%">
+      70%
+      </div>
+    </div>
+  </div>
+-->
+  <div id="editor"> </div>
+  <div id="graphviz"> Control Flow Only Graph (CFOG) goes here </div>
+</div>
+
 <div id="jstree" class="divleft"> Loading... </div>
 
-<div id="editor" class="divright"> </div>
 
-<div id="graphviz"> Control Flow Only Graph (CFOG) goes here </div>
 
 <script>
     var editor = ace.edit("editor");
     editor.setTheme("ace/theme/twilight");
+    // TODO: Set editor mode based on data in the code traces
     editor.getSession().setMode("ace/mode/python");
-    console.log("editor div set up");
-    // TODO: read the .tsv file with a button
-    /*
-    getFileFromServer("2subs.tsv", function(text) {
-        if (text === null) {
-            console.log("error");
-        }
-        else {
-            console.log("got it");
-            console.log(text.length);
-            tokens=text.split("\t");
-            code=tokens[5].replace("\\n", "\n");
-            editor.setValue(code);
-            editor.setValue(text);
-        }
-    });
-    */
+    //console.log("editor div set up");
 </script>
 
 <script>
-  mygraphviz = function(text) {
-    text=text.replace(/\\n/g, '\n');
-    var svg=Viz(text, "svg", "dot");
-    var container = document.getElementById('graphviz');
-    container.innerHTML=svg;
-  }
   //TODO: read esubs from a widget to upload a file
   var tree = getFileFromServer("data/esubs.tsv", function(text) {
     if (text === null) {
@@ -82,39 +86,66 @@ Sort by:
     else {
       //TODO: convert the .tsv text files to JSON from command-line
       // either with Python or Node.js
-      //PROB => USER => CFOG => TS => SCORE => CODE => GRAPHVIZ
+      //PROB => CFOG => USER => TS
       var tree=makeJSTree(readSubs(text));
       $(function () {
         $('#jstree').on('select_node.jstree', function (e, data) {
           if (data.selected.length>1) {
             return;
           }
+          console.log('selected: '+data.node.text);
+          console.log(data.node);
+
           var text=data.node.text;
           var prefix=text.substring(0,4);
           var rest=text.substring(6);
           if (prefix=='CFOG') {
             mygraphviz(data.node.data[0]);
           }
+          if (prefix=='USER') {
+            // TODO: get graphviz data from parent node
+            // need to get the JSON data from parent, not the HTML
+            //var parentNode=$('#jstree')._get_parent(data.node);
+            //var parentNode = $('#jstree').get_parent(data.node);
+            //var parentNode = $('#jstree').find("[id='"+data.node.parents[0]+"']");
+            //console.log(parentNode);
+            //mygraphviz(parentNode.data[0]);
+          }
           if (prefix=='TIME') {
-            // [code.replace(/\\n/g, '\n', graphviz.replace(/\\n/g, '\n', passed, attempted];
+            // data contains: [code, graphviz, passed, attempted];
             var code=data.node.data[0];
             var graphviz=data.node.data[1];
-            var passed=data.node.data[2];
-            var attemptedd=data.node.data[3];
+            var passed=parseInt(data.node.data[2]);
+            var attempted=parseInt(data.node.data[3]);
+            
+            var progress = 0;
+            if (attempted>0) {
+              progress = Math.round(passed/attempted);
+            }
+            var label = document.getElementById('score');
+            label.innerHTML=passed+" / "+attempted;
+            /*
+            var progressbar = document.getElementById('progress-bar');
+            var attrs = progressbar.attributes;
+            for(var i = 0; i < attrs.length; i++) {
+               output += attrs[i].name + "->" + attrs[i].value;
+          }
+            progressbar.attributes
+            */
             // put code in the ACE editor
             editor.setValue(code);
             editor.clearSelection();
             // set the CFOG in the CFG
             mygraphviz(graphviz);
           }
-          console.log('selected: '+data.node);
+          
         }).jstree({ 
           'core' : {
             'data' : tree
           }
         });
       });
-      console.log("Read JSTree of size: " + Object.size(tree));
+      //console.log("Read JSTree of size: " + Object.size(tree));
     }
   });
   

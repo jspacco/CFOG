@@ -6,10 +6,9 @@ Object.size = function(obj) {
     return size;
 };
 
-function makeJSTree(map, gvizmap) {
+function makeJSTree(map) {
 	// (???) may need to use hasOwnProperty() with for-in loops in JS
 	// http://stackoverflow.com/questions/684672/loop-through-javascript-object
-	// TODO: add to text: Student, Problem, CFOG
 
 	var jstree=[];
 	for (var problem in map) {
@@ -47,22 +46,7 @@ function makeJSTree(map, gvizmap) {
 					var data={}
 					data['text']='TIME: '+timestamp;
 					datalist.push(data);
-					/*
-					data['children']=[{'text':'SCOR: '+passed+'-'+attempted, 
-						'children':[{'text':'CODE: '+code, 
-							'children': [{'text':'GVIZ: '+graphviz}]
-						}]
-					}];
-					*/
-
 					data['data']=[code.replace(/\\n/g, '\n'), graphviz, passed, attempted];
-					
-					/*
-					data['children']=;
-					codechild.push([{'text':code, 'children': [{'text':}]}]);
-					codechild[0]['children']=
-					data['children']=codechild;
-					*/
 				}
 			}
 		}
@@ -75,13 +59,15 @@ function makeJSTree(map, gvizmap) {
 
 function readSubs(text) {
 	var map={};
-	var gvizmap={};
 	var lines=text.split("\n");
 	for (var i=0; i<lines.length; i++) {
 		var line=lines[i];
+		if (line.length==0) {
+			continue;
+		}
 
 		if (i>=100) {
-			break;
+			//break;
 		}
 
 		//console.log(line);
@@ -100,7 +86,6 @@ function readSubs(text) {
 		}
 		if (!(cfg in map[problem])) {
 			map[problem][cfg] = {};
-			gvizmap[cfg] = graphviz;
 		}
 		if (!(user in map[problem][cfg])) {
 			map[problem][cfg][user] = []
@@ -115,3 +100,10 @@ function readSubs(text) {
 	//return {"map" : map, "gvizmap" : gvizmap};
 	return map;
 };
+
+if (typeof module!='undefined') {
+    // module!=undefined is our proxy for running in node.js
+    // rather than in the browser
+    module.exports.readSubs=readSubs;
+    module.exports.makeJSTree=makeJSTree;
+}
